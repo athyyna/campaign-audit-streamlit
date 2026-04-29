@@ -637,20 +637,19 @@ else:
             for cat, items in by_cat.items():
                 st.markdown(f'<div class="section-header">{cat}</div>', unsafe_allow_html=True)
                 for f in items:
-                    sev_color = '#EF4444' if f.severity == 'critical' else '#F59E0B'
                     sev_label = '🔴 Critical' if f.severity == 'critical' else '🟡 Warning'
                     checked = st.checkbox(
-                        f"{sev_label} — **{f.rule.name}**",
+                        f"{sev_label} — **{f.rule_name}**",
                         key=f"manual_{f.rule_id}",
-                        help=f.rule.recommendation,
+                        help=f.recommendation,
                     )
                     if checked:
                         done_count += 1
                     if not checked:
                         st.markdown(
                             f'<div style="margin:-8px 0 10px 28px;font-size:0.76rem;color:rgba(255,255,255,0.45);line-height:1.5">'
-                            f'{f.rule.description}<br>'
-                            f'<span style="color:#60A5FA">→ {f.rule.recommendation}</span>'
+                            f'{f.description}<br>'
+                            f'<span style="color:#60A5FA">→ {f.recommendation}</span>'
                             f'</div>',
                             unsafe_allow_html=True
                         )
