@@ -532,7 +532,9 @@ else:
     st.markdown("---")
 
     # ── Tabs ───────────────────────────────────────────────────────────────────
-    tab_findings, tab_summary, tab_data = st.tabs(["🔍 Findings", "📋 Summary", "📄 Raw Data"])
+    manual_checks = [f for f in result.findings if f.status == 'not_applicable']
+    manual_badge = f" ({len(manual_checks)})" if manual_checks else ""
+    tab_findings, tab_summary, tab_manual, tab_data = st.tabs(["🔍 Findings", "📋 Summary", f"👁 Manual Checks{manual_badge}", "📄 Raw Data"])
 
     with tab_findings:
         # Filter bar
@@ -608,6 +610,54 @@ else:
                 st.markdown('<div class="section-header">🟡 Areas to Improve</div>', unsafe_allow_html=True)
                 for item in result.summary_improvements[:6]:  # Top 6
                     st.markdown(f'<div style="font-size:0.82rem;color:rgba(255,255,255,0.65);padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">→ {item}</div>', unsafe_allow_html=True)
+
+    with tab_manual:
+        st.markdown("""
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:16px;margin-bottom:16px">
+            <div style="font-size:0.9rem;font-weight:700;color:#F59E0B;margin-bottom:6px">👁 Platform-Level Checks — Cannot Be Auto-Verified</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.6">
+                These checks <strong>require you to log into the ad platform directly</strong>. They cannot be assessed from a CSV export alone.<br>
+                Work through each item below and tick it off as you verify it inside the platform.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if not manual_checks:
+            st.success("No manual checks required for this channel.")
+        else:
+            # Group by category
+            from collections import defaultdict
+            by_cat = defaultdict(list)
+            for f in manual_checks:
+                by_cat[f.category].append(f)
+
+            total = len(manual_checks)
+            done_count = 0
+
+            for cat, items in by_cat.items():
+                st.markdown(f'<div class="section-header">{cat}</div>', unsafe_allow_html=True)
+                for f in items:
+                    sev_color = '#EF4444' if f.severity == 'critical' else '#F59E0B'
+                    sev_label = '🔴 Critical' if f.severity == 'critical' else '🟡 Warning'
+                    checked = st.checkbox(
+                        f"{sev_label} — **{f.rule.name}**",
+                        key=f"manual_{f.rule_id}",
+                        help=f.rule.recommendation,
+                    )
+                    if checked:
+                        done_count += 1
+                    if not checked:
+                        st.markdown(
+                            f'<div style="margin:-8px 0 10px 28px;font-size:0.76rem;color:rgba(255,255,255,0.45);line-height:1.5">'
+                            f'{f.rule.description}<br>'
+                            f'<span style="color:#60A5FA">→ {f.rule.recommendation}</span>'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            progress = done_count / total if total > 0 else 0
+            st.progress(progress, text=f"Platform review progress: {done_count} of {total} checks completed")
 
     with tab_data:
         st.markdown('<div class="section-header">Uploaded Data Preview</div>', unsafe_allow_html=True)
