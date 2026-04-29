@@ -1,7 +1,7 @@
 """
 Campaign Audit Engine
-Processes uploaded CSV/XLSX data against best practice rules
-Returns structured findings with severity, scores, and recommendations
+Processes uploaded CSV/XLSX data against best practice rules.
+Supports check_type: 'threshold' (metric vs. benchmark) and 'checklist' (column presence/value check).
 """
 
 import re
@@ -104,10 +104,28 @@ def detect_channel(columns: list) -> str:
         return 'linkedin'
     if 'demand_gen' in h or 'discovery' in h:
         return 'demand_gen'
-    # Fallback: if frequency + reach present → likely Meta
     if 'frequency' in h and 'reach' in h:
         return 'meta'
     return 'meta'
+
+
+def _check_column_value(df: pd.DataFrame, col: str, expected_value: Optional[str]) -> tuple:
+    """
+    For checklist rules: check if a column exists and optionally matches expected_value.
+    Returns (found: bool, actual_str: str)
+    """
+    if col not in df.columns:
+        return False, None
+    if expected_value is None:
+        # Just presence check — column exists and has non-empty values
+        non_empty = df[col].dropna().astype(str).str.strip()
+        non_empty = non_empty[non_empty != '']
+        return len(non_empty) > 0, str(df[col].iloc[0]) if len(df) > 0 else None
+    # Value match check
+    vals = df[col].astype(str).str.strip().str.lower()
+    match = (vals == expected_value.lower()).any()
+    actual = str(df[col].iloc[0]) if len(df) > 0 else None
+    return match, actual
 
 
 # ─── Core Audit Function ──────────────────────────────────────────────────────
@@ -123,6 +141,23 @@ def run_audit(df: pd.DataFrame, channel_id: str) -> AuditResult:
     findings = []
 
     for rule in channel_rules:
+
+        # ── Checklist rules (no metric needed, always shown) ──────────────────
+        if rule.check_type == 'checklist':
+            # checklist rules always surface — they represent structural best practices
+            # that can't be auto-verified from a CSV, so we surface them as advisory checks
+            findings.append(AuditFinding(
+                rule_id=rule.id, rule_name=rule.name, channel=channel_id,
+                category=rule.category, severity=rule.severity, status='fail',
+                metric=None, actual_value=None, formatted_value=None,
+                benchmark_label=rule.benchmark_label,
+                evidence=rule.description,
+                recommendation=rule.recommendation, quick_win=rule.quick_win,
+                description=rule.description,
+            ))
+            continue
+
+        # ── Threshold rules (metric-based) ────────────────────────────────────
         if not rule.metric:
             continue
 
@@ -140,7 +175,6 @@ def run_audit(df: pd.DataFrame, channel_id: str) -> AuditResult:
             ))
             continue
 
-        # Parse and average values across all rows
         values = [parse_numeric(v) for v in df[col] if parse_numeric(v) is not None]
         if not values:
             findings.append(AuditFinding(
@@ -188,16 +222,16 @@ def run_audit(df: pd.DataFrame, channel_id: str) -> AuditResult:
                     description=rule.description,
                 ))
 
-    # Counts
-    critical_count = sum(1 for f in findings if f.status == 'fail' and f.severity == 'critical')
-    warning_count  = sum(1 for f in findings if f.status == 'fail' and f.severity == 'warning')
-    pass_count     = sum(1 for f in findings if f.status == 'pass')
+    # Counts — use rule lookup to exclude checklist from critical score impact
+    rule_map = {r.id: r for r in channel_rules}
+    def is_checklist(f): return rule_map.get(f.rule_id) and rule_map[f.rule_id].check_type == 'checklist'
+    critical_count  = sum(1 for f in findings if f.status == 'fail' and f.severity == 'critical' and not is_checklist(f))
+    warning_count   = sum(1 for f in findings if f.status == 'fail' and f.severity == 'warning')
+    pass_count      = sum(1 for f in findings if f.status == 'pass')
     quick_win_count = sum(1 for f in findings if f.status == 'fail' and f.quick_win)
 
-    # Score: starts at 100, deduct for critical/warning
     score = max(0, min(100, 100 - (critical_count * 20) - (warning_count * 8)))
 
-    # Summary sections
     summary_worked = [
         f"**{f.rule_name}**: {f.formatted_value} — within benchmark ({f.benchmark_label})"
         for f in findings if f.status == 'pass' and f.formatted_value
