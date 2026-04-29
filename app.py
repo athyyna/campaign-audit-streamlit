@@ -81,33 +81,51 @@ st.markdown("""
   .stTabs [aria-selected="true"] { color: #60A5FA; }
   .stExpander { border: 1px solid rgba(255,255,255,0.08) !important; background: rgba(255,255,255,0.02) !important; border-radius: 8px !important; }
 
-  /* ── File uploader — kill white box ── */
+  /* ── File uploader — dark themed ── */
   [data-testid="stFileUploader"] section,
   [data-testid="stFileUploaderDropzone"],
   [data-testid="stFileUploaderDropzoneInstructions"] {
-    background-color: rgba(255,255,255,0.04) !important;
-    border: 1px dashed rgba(255,255,255,0.15) !important;
+    background-color: rgba(59,130,246,0.05) !important;
+    border: 1px dashed rgba(59,130,246,0.3) !important;
     border-radius: 8px !important;
     color: #94A3B8 !important;
   }
   [data-testid="stFileUploader"] section:hover,
   [data-testid="stFileUploaderDropzone"]:hover {
-    border-color: rgba(59,130,246,0.5) !important;
-    background-color: rgba(59,130,246,0.06) !important;
+    border-color: rgba(59,130,246,0.6) !important;
+    background-color: rgba(59,130,246,0.1) !important;
   }
   [data-testid="stFileUploaderDropzoneInstructions"] span,
   [data-testid="stFileUploaderDropzoneInstructions"] small {
-    color: #94A3B8 !important;
+    color: #64748B !important;
+  }
+  /* The "Browse files" button inside uploader */
+  [data-testid="stFileUploaderDropzone"] button,
+  [data-testid="stFileUploader"] button {
+    background-color: rgba(59,130,246,0.18) !important;
+    border: 1px solid rgba(59,130,246,0.4) !important;
+    color: #93C5FD !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+  }
+  [data-testid="stFileUploaderDropzone"] button:hover,
+  [data-testid="stFileUploader"] button:hover {
+    background-color: rgba(59,130,246,0.3) !important;
+    border-color: rgba(59,130,246,0.6) !important;
   }
   /* Uploaded file pill */
   [data-testid="stFileUploaderFile"],
   [data-testid="stFileUploaderFileName"] {
-    background-color: rgba(255,255,255,0.06) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
+    background-color: rgba(16,185,129,0.08) !important;
+    border: 1px solid rgba(16,185,129,0.2) !important;
     border-radius: 6px !important;
-    color: #CBD5E1 !important;
+    color: #6EE7B7 !important;
   }
-  [data-testid="stFileUploaderDeleteBtn"] button { color: #94A3B8 !important; }
+  [data-testid="stFileUploaderDeleteBtn"] button {
+    color: #64748B !important;
+    background: transparent !important;
+    border: none !important;
+  }
 
   /* ── Radio buttons ── */
   [data-testid="stRadio"] > div { gap: 6px; }
