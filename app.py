@@ -10,13 +10,20 @@ How to use:
 Supported channels: Google Search, YouTube, Performance Max, DV360, LinkedIn, Meta, Demand Gen
 """
 
+import re
 import io
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from best_practices import CHANNELS, CHANNEL_MAP, DEMO_DATA, SEVERITY_CONFIG
 from audit_engine import run_audit, detect_channel, AuditResult, AuditFinding
+
+
+def md_to_html(text: str) -> str:
+    """Convert **bold** markdown to <strong> tags for safe HTML injection."""
+    return re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
 
 # ─── Page Config ──────────────────────────────────────────────────────────────
 
@@ -273,48 +280,61 @@ def make_findings_bar(result: AuditResult) -> go.Figure:
     return fig
 
 
+# Shared CSS for finding cards (injected once per render_finding call via components.html)
+_FINDING_CSS = """
+<style>
+  body { margin:0; padding:0; background:transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .finding-critical { border-left:3px solid #EF4444; padding:12px 16px; border-radius:0 8px 8px 0; background:rgba(239,68,68,0.08); margin-bottom:0; }
+  .finding-warning  { border-left:3px solid #F59E0B; padding:12px 16px; border-radius:0 8px 8px 0; background:rgba(245,158,11,0.08); margin-bottom:0; }
+  .finding-pass     { border-left:3px solid #10B981; padding:12px 16px; border-radius:0 8px 8px 0; background:rgba(16,185,129,0.08); margin-bottom:0; }
+  .finding-na       { border-left:3px solid rgba(255,255,255,0.12); padding:12px 16px; border-radius:0 8px 8px 0; background:rgba(255,255,255,0.02); margin-bottom:0; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-right:6px; }
+  .badge-critical { background:rgba(239,68,68,0.15); color:#EF4444; border:1px solid rgba(239,68,68,0.3); }
+  .badge-warning  { background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.3); }
+  .badge-pass     { background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); }
+  .badge-quickwin { background:rgba(59,130,246,0.15); color:#60A5FA; border:1px solid rgba(59,130,246,0.3); }
+  .badge-na       { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.3); }
+  .cat-label { font-size:0.65rem; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.1em; }
+  .rule-name { font-weight:600; margin-top:4px; font-size:0.9rem; color:#E2E8F0; }
+  .evidence  { font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:3px; line-height:1.5; }
+  .rec-block { margin-top:8px; font-size:0.78rem; color:rgba(255,255,255,0.5); line-height:1.5; }
+  .rec-block strong { color:#60A5FA; }
+  .val-block { text-align:right; min-width:70px; font-family:'Courier New',monospace; font-weight:700; font-size:0.95rem; white-space:nowrap; }
+  .row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+</style>
+"""
+
+
 def render_finding(f: AuditFinding):
-    css_class = {
-        'critical': 'finding-critical',
-        'warning':  'finding-warning',
-        'pass':     'finding-pass',
-    }.get(f.severity if f.status != 'not_applicable' else 'na', 'finding-na')
+    sev_key = f.severity if f.status != 'not_applicable' else 'na'
+    css_class   = {'critical':'finding-critical','warning':'finding-warning','pass':'finding-pass'}.get(sev_key,'finding-na')
+    badge_class = {'critical':'badge-critical','warning':'badge-warning','pass':'badge-pass'}.get(sev_key,'badge-na')
+    badge_label = {'critical':'🔴 Critical','warning':'🟡 Warning','pass':'🟢 Pass'}.get(sev_key,'⚪ N/A')
+    val_color   = SEVERITY_CONFIG.get(f.severity, {}).get('color', '#888')
 
-    badge_class = {
-        'critical': 'badge-critical',
-        'warning':  'badge-warning',
-        'pass':     'badge-pass',
-    }.get(f.severity if f.status != 'not_applicable' else 'na', 'badge-na')
-
-    badge_label = {
-        'critical': '🔴 Critical',
-        'warning':  '🟡 Warning',
-        'pass':     '🟢 Pass',
-    }.get(f.severity if f.status != 'not_applicable' else 'na', '⚪ N/A')
-
-    qw_badge = '<span class="badge badge-quickwin">⚡ Quick Win</span>' if f.quick_win and f.status == 'fail' else ''
-    value_str = f'<span style="font-family:Courier New;font-weight:700;color:{SEVERITY_CONFIG.get(f.severity,{}).get("color","#888")}">{f.formatted_value}</span>' if f.formatted_value else ''
-
+    qw_badge  = '<span class="badge badge-quickwin">⚡ Quick Win</span>' if f.quick_win and f.status == 'fail' else ''
+    value_str = f'<div class="val-block" style="color:{val_color}">{f.formatted_value}</div>' if f.formatted_value else '<div></div>'
+    evidence_html = md_to_html(f.evidence)
     rec_html = ''
     if f.status == 'fail' and f.recommendation:
-        rec_html = f'<div style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.5"><strong style="color:#60A5FA">→ Recommendation:</strong> {f.recommendation}</div>'
+        rec_html = f'<div class="rec-block"><strong>→ Recommendation:</strong> {f.recommendation}</div>'
 
-    html = f"""
-    <div class="{css_class}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <span class="badge {badge_class}">{badge_label}</span>
-          {qw_badge}
-          <span style="font-size:0.68rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em">{f.category}</span>
-          <div style="font-weight:600;margin-top:4px;font-size:0.9rem">{f.rule_name}</div>
-          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px">{f.evidence}</div>
-          {rec_html}
-        </div>
-        <div style="text-align:right;min-width:70px">{value_str}</div>
-      </div>
+    html = f"""{_FINDING_CSS}
+<div class="{css_class}">
+  <div class="row">
+    <div style="flex:1;min-width:0">
+      <span class="badge {badge_class}">{badge_label}</span>{qw_badge}
+      <span class="cat-label">{f.category}</span>
+      <div class="rule-name">{f.rule_name}</div>
+      <div class="evidence">{evidence_html}</div>
+      {rec_html}
     </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    {value_str}
+  </div>
+</div>"""
+    # height auto-sizes: ~90px base + ~20px for recommendation
+    height = 115 if (f.status == 'fail' and f.recommendation) else 85
+    components.html(html, height=height, scrolling=False)
 
 
 def load_demo(channel_id: str) -> pd.DataFrame:
