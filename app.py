@@ -160,14 +160,34 @@ st.markdown("""
     color: #E2E8F0 !important;
   }
   div[data-baseweb="select"] span { color: #E2E8F0 !important; }
+  /* Dropdown popover + menu list */
+  div[data-baseweb="popover"],
   div[data-baseweb="popover"] ul,
   div[data-baseweb="menu"] {
     background-color: #1E293B !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
     border-radius: 8px !important;
   }
-  div[data-baseweb="menu"] li { color: #CBD5E1 !important; }
-  div[data-baseweb="menu"] li:hover { background-color: rgba(59,130,246,0.15) !important; }
+  /* Every list item — force light text */
+  div[data-baseweb="menu"] li,
+  div[data-baseweb="menu"] li *,
+  div[data-baseweb="menu"] [role="option"],
+  div[data-baseweb="menu"] [role="option"] * {
+    color: #CBD5E1 !important;
+    background-color: transparent !important;
+  }
+  /* Hover state */
+  div[data-baseweb="menu"] li:hover,
+  div[data-baseweb="menu"] [role="option"]:hover {
+    background-color: rgba(59,130,246,0.18) !important;
+    color: #E2E8F0 !important;
+  }
+  /* Selected / highlighted item */
+  div[data-baseweb="menu"] [aria-selected="true"],
+  div[data-baseweb="menu"] [data-highlighted="true"] {
+    background-color: rgba(59,130,246,0.25) !important;
+    color: #93C5FD !important;
+  }
 
   /* ── Success / info / warning alert boxes ── */
   [data-testid="stAlert"] {
