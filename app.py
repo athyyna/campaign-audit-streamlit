@@ -73,14 +73,111 @@ st.markdown("""
   /* Divider */
   hr { border-color: rgba(255,255,255,0.08); }
 
-  /* Streamlit overrides */
+  /* ── Streamlit widget overrides ── */
   .stButton > button { background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4); color: #93C5FD; border-radius: 8px; font-weight: 600; }
   .stButton > button:hover { background: rgba(59,130,246,0.35); border-color: rgba(59,130,246,0.6); }
-  .stSelectbox label, .stFileUploader label { color: rgba(255,255,255,0.6) !important; font-size: 0.8rem !important; text-transform: uppercase; letter-spacing: 0.08em; }
   div[data-testid="stMetricValue"] { color: #E2E8F0; }
   .stTabs [data-baseweb="tab"] { color: rgba(255,255,255,0.5); }
   .stTabs [aria-selected="true"] { color: #60A5FA; }
   .stExpander { border: 1px solid rgba(255,255,255,0.08) !important; background: rgba(255,255,255,0.02) !important; border-radius: 8px !important; }
+
+  /* ── File uploader — kill white box ── */
+  [data-testid="stFileUploader"] section,
+  [data-testid="stFileUploaderDropzone"],
+  [data-testid="stFileUploaderDropzoneInstructions"] {
+    background-color: rgba(255,255,255,0.04) !important;
+    border: 1px dashed rgba(255,255,255,0.15) !important;
+    border-radius: 8px !important;
+    color: #94A3B8 !important;
+  }
+  [data-testid="stFileUploader"] section:hover,
+  [data-testid="stFileUploaderDropzone"]:hover {
+    border-color: rgba(59,130,246,0.5) !important;
+    background-color: rgba(59,130,246,0.06) !important;
+  }
+  [data-testid="stFileUploaderDropzoneInstructions"] span,
+  [data-testid="stFileUploaderDropzoneInstructions"] small {
+    color: #94A3B8 !important;
+  }
+  /* Uploaded file pill */
+  [data-testid="stFileUploaderFile"],
+  [data-testid="stFileUploaderFileName"] {
+    background-color: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 6px !important;
+    color: #CBD5E1 !important;
+  }
+  [data-testid="stFileUploaderDeleteBtn"] button { color: #94A3B8 !important; }
+
+  /* ── Radio buttons ── */
+  [data-testid="stRadio"] > div { gap: 6px; }
+  [data-testid="stRadio"] label {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    color: #CBD5E1 !important;
+    transition: all 0.15s;
+  }
+  [data-testid="stRadio"] label:hover {
+    background: rgba(59,130,246,0.1) !important;
+    border-color: rgba(59,130,246,0.35) !important;
+  }
+  /* Hide the raw radio circle — use styled label instead */
+  [data-testid="stRadio"] input[type="radio"] { accent-color: #3B82F6; }
+
+  /* ── Selectbox / dropdown ── */
+  [data-testid="stSelectbox"] > div > div,
+  div[data-baseweb="select"] > div {
+    background-color: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 8px !important;
+    color: #E2E8F0 !important;
+  }
+  div[data-baseweb="select"] span { color: #E2E8F0 !important; }
+  div[data-baseweb="popover"] ul,
+  div[data-baseweb="menu"] {
+    background-color: #1E293B !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 8px !important;
+  }
+  div[data-baseweb="menu"] li { color: #CBD5E1 !important; }
+  div[data-baseweb="menu"] li:hover { background-color: rgba(59,130,246,0.15) !important; }
+
+  /* ── Success / info / warning alert boxes ── */
+  [data-testid="stAlert"] {
+    background-color: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 8px !important;
+    color: #CBD5E1 !important;
+  }
+  div[data-testid="stNotification"] { background-color: rgba(16,185,129,0.12) !important; border-color: rgba(16,185,129,0.3) !important; }
+
+  /* ── Caption / small text ── */
+  .stCaption, [data-testid="stCaptionContainer"] { color: rgba(255,255,255,0.35) !important; }
+
+  /* ── Download button ── */
+  [data-testid="stDownloadButton"] button {
+    background: rgba(16,185,129,0.15) !important;
+    border: 1px solid rgba(16,185,129,0.3) !important;
+    color: #6EE7B7 !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+  }
+  [data-testid="stDownloadButton"] button:hover {
+    background: rgba(16,185,129,0.25) !important;
+  }
+
+  /* ── Dataframe ── */
+  [data-testid="stDataFrame"] { border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 8px !important; overflow: hidden; }
+
+  /* ── Labels ── */
+  .stSelectbox label, .stFileUploader label, .stRadio label {
+    color: rgba(255,255,255,0.45) !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
 </style>
 """, unsafe_allow_html=True)
 
